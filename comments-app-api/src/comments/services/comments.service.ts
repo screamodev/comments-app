@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { Comment } from '../entities/comment.entity';
 import { CreateCommentDto } from '../dtos/create-comment.dto';
 import { User } from '../../users/entities/user.entity';
+import * as sanitizeHtml from 'sanitize-html';
 
 @Injectable()
 export class CommentsService {
@@ -18,11 +19,15 @@ export class CommentsService {
   async createComment(dto: CreateCommentDto): Promise<Comment> {
     const user = await this.userRepository.findOneBy({ email: dto.email });
 
+    const sanitizedText = sanitizeHtml(dto.text, {
+      allowedTags: ['a', 'code', 'i', 'strong', 'p'],
+      allowedAttributes: { a: ['href', 'title'] },
+    });
+
     const comment = this.commentRepository.create({
-      text: dto.text,
+      text: sanitizedText,
       user: user,
       parent: dto.parentId ? await this.commentRepository.findOneBy({ id: dto.parentId }) : null,
-      allowedTags: ['a', 'code', 'i', 'strong'],
     });
 
     return this.commentRepository.save(comment);
@@ -30,7 +35,8 @@ export class CommentsService {
 
   async getComments(page: number, limit: number, sort: 'asc' | 'desc') {
     return this.commentRepository.find({
-      relations: ['user', 'parent', 'replies'],
+      where: { parent: null },
+      relations: ['user', 'replies', 'replies.user'],
       order: { createdAt: sort === 'asc' ? 'ASC' : 'DESC' },
       take: limit,
       skip: (page - 1) * limit,

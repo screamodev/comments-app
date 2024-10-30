@@ -9,9 +9,6 @@ export class Comment {
   @Column({ type: 'text' })
   text: string;
 
-  @Column({ type: 'json', nullable: true })
-  allowedTags: string[];
-
   @ManyToOne(() => User, (user) => user.comments)
   user: User;
 
