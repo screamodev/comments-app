@@ -30,12 +30,12 @@ export class CommentsService {
   }
 
 
-  async getComments(page: number, limit: number, sort: 'asc' | 'desc') {
+  async getComments(page: number, limit: number, field: string, order: 'ASC' | 'DESC') {
     return this.commentRepository
         .createQueryBuilder('comment')
         .leftJoinAndSelect('comment.files', 'files')
         .where('comment.parent IS NULL')
-        .orderBy('comment.createdAt', 'ASC')
+        .orderBy(`comment.${field}`, order)
         .skip((page - 1) * limit)
         .take(limit)
         .getMany();

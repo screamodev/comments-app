@@ -16,9 +16,10 @@ export class CommentsController {
   async findAll(
       @Query('page') page: number = 1,
       @Query('limit') limit: number = 25,
-      @Query('sort') sort: 'asc' | 'desc' = 'desc'
+      @Query('field') field: string = 'createdAt',
+      @Query('order') order: 'ASC' | 'DESC' = 'DESC'
   ) {
-    return this.commentsService.getComments(page, limit, sort);
+    return this.commentsService.getComments(page, limit, field, order);
   }
 
   @Get(':id/replies')
