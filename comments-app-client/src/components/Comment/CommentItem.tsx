@@ -50,8 +50,8 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment }) => {
         formData.append('text', data.text);
         formData.append('parentId', String(comment.id));
 
-        if (files?.length) {
-            files.forEach((file) => {
+        if (files) {
+            Array.from(files).forEach((file) => {
                 formData.append('files', file);
             });
         }
