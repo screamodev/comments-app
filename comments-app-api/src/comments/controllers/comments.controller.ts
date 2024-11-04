@@ -4,12 +4,14 @@ import {CreateCommentDto} from "../dtos/create-comment.dto";
 import {FilesInterceptor} from "@nestjs/platform-express";
 import {FileService} from "../../files/services/file.service";
 import {ApiConsumes} from "@nestjs/swagger";
+import {CommentsGateway} from "../gateways/comments.gateway";
 
 @Controller('comments')
 export class CommentsController {
   constructor(
       private readonly commentsService: CommentsService,
-      private readonly fileService: FileService
+      private readonly fileService: FileService,
+      private readonly commentsGateway: CommentsGateway
   ) {}
 
   @Get()
@@ -37,9 +39,15 @@ export class CommentsController {
     const comment = await this.commentsService.createComment(createCommentDto);
 
     if (files && files.length > 0) {
-      await this.fileService.uploadFiles(comment.id, files);
+      comment.files = await this.fileService.uploadFiles(comment.id, files);
     }
 
-    return comment;
+    if (!comment?.parent?.id) {
+      this.commentsGateway.emitNewComment(comment);
+    } else {
+      this.commentsGateway.emitNewReply(comment);
+    }
+
+    return { success: true };
   }
 }
