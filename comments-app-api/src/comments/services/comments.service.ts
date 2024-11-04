@@ -34,6 +34,8 @@ export class CommentsService {
     return this.commentRepository
         .createQueryBuilder('comment')
         .leftJoinAndSelect('comment.files', 'files')
+        .leftJoinAndSelect('comment.parent', 'parent')
+        .leftJoinAndSelect('comment.replies', 'replies')
         .where('comment.parent IS NULL')
         .orderBy(`comment.${field}`, order)
         .skip((page - 1) * limit)
@@ -44,7 +46,7 @@ export class CommentsService {
   async getReplies(commentId: number) {
     return this.commentRepository.find({
       where: { parent: { id: commentId } },
-      relations: ['files'],
+      relations: ['files', 'parent', 'replies'],
       order: { createdAt: 'ASC' },
     });
   }

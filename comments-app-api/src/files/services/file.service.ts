@@ -14,7 +14,7 @@ export class FileService {
         @InjectRepository(File) private filesRepository: Repository<File>,
     ) {}
 
-    async uploadFiles(commentId: number, files: Express.Multer.File[]) {
+    async uploadFiles(commentId: number, files: Express.Multer.File[]): Promise<File[]> {
         const comment = await this.commentsRepository.findOneBy({ id: commentId });
 
         if (!comment) {
