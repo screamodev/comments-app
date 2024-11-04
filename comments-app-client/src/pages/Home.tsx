@@ -1,9 +1,11 @@
 import React from 'react';
-import CommentForm from '../components/Comment/CommentForm';
-import CommentList from '../components/Comment/CommentList';
+import CommentsList from "../components/Comment/CommentList";
+import {CommentsProvider} from "../context/CommentsContext";
 
 const Home: React.FC = () => (
-        <CommentList />
+    <CommentsProvider>
+        <CommentsList />
+    </CommentsProvider>
 );
 
 export default Home;
