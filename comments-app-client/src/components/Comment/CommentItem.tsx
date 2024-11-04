@@ -15,11 +15,12 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment }) => {
     const [showReplies, setShowReplies] = useState(false);
     const [repliesLoaded, setRepliesLoaded] = useState(!!comment.replies);
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const { updateReplies } = useComments(); // Функция из контекста для обновления replies
+    const { updateReplies } = useComments();
+
+    const baseUrl = process.env.REACT_APP_API_KEY;
 
     const loadRepliesRecursively = async (parentId: number) => {
         const loadedReplies = await loadCommentReplies(parentId);
-
         for (const reply of loadedReplies) {
             if (!reply.replies || reply.replies.length === 0) {
                 const deeperReplies = await loadCommentReplies(reply.id);
@@ -33,7 +34,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment }) => {
         if (!showReplies && !repliesLoaded) {
             try {
                 const loadedReplies = await loadRepliesRecursively(comment.id);
-                updateReplies(comment.id, loadedReplies); // Обновляем replies через контекст
+                updateReplies(comment.id, loadedReplies); // Update replies through context
                 setRepliesLoaded(true);
             } catch (error) {
                 console.error("Failed to load replies: ", error);
@@ -44,7 +45,6 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment }) => {
 
     const handleReplySubmit = async (data: CommentFormData, files?: File[]) => {
         const formData = new FormData();
-
         formData.append('username', data.username);
         formData.append('email', data.email);
         formData.append('text', data.text);
@@ -58,7 +58,6 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment }) => {
 
         try {
             await createComment(formData);
-
             setIsModalOpen(false);
         } catch (error) {
             console.error("Failed to submit reply: ", error);
@@ -78,6 +77,38 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment }) => {
                         className="mt-2 text-gray-700"
                         dangerouslySetInnerHTML={{ __html: comment.text }}
                     ></p>
+
+                    {comment.files && (
+                        <div className="mt-3">
+                            {comment.files.map(file => (
+                                file.fileType.startsWith('image/') ? (
+                                    <a
+                                        key={file.id}
+                                        href={baseUrl + file.url}
+                                        data-lightbox={`comment-${comment.id}`}
+                                        data-title={file.filename}
+                                    >
+                                        <img
+                                            src={baseUrl + file.url}
+                                            alt={file.filename}
+                                            className="w-20 h-20 object-cover rounded-md mr-2 mb-2 cursor-pointer"
+                                        />
+                                    </a>
+                                ) : (
+                                    <a
+                                        key={file.id}
+                                        href={baseUrl + file.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="block text-blue-500 underline mt-2"
+                                    >
+                                        {file.filename} ({(file.fileSize / 1024).toFixed(2)} KB)
+                                    </a>
+                                )
+                            ))}
+                        </div>
+                    )}
+
                     <div className="flex items-center space-x-4 mt-2 text-sm text-blue-500">
                         <button onClick={toggleReplies} className="flex items-center space-x-1">
                             {showReplies ? <FiChevronUp /> : <FiChevronDown />}

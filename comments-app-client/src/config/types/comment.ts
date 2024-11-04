@@ -1,3 +1,5 @@
+import {CommentFile} from "./commentFile";
+
 export interface Comment {
     id: number;
     username: string;
@@ -6,6 +8,6 @@ export interface Comment {
     parent: Comment;
     text: string;
     createdAt: string;
-    files?: { id: number; image: string }[];
+    files?: CommentFile[];
     replies: Comment[];
 }

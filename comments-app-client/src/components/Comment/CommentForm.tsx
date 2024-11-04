@@ -1,7 +1,8 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import sanitizeHtml from 'sanitize-html';
-import {CommentFormData} from "../../config/types/commentFormData";
+import { CommentFormData } from "../../config/types/commentFormData";
+import {isHtmlValid} from "../../utils/isHtmlValid";
 
 interface CommentFormProps {
     onSubmitComment: (data: CommentFormData, files?: File[]) => void;
@@ -13,10 +14,22 @@ const CommentForm: React.FC<CommentFormProps> = ({ onSubmitComment }) => {
         handleSubmit,
         formState: { errors },
         setValue,
-        getValues } = useForm<CommentFormData>();
+        getValues,
+        setError,
+        clearErrors
+    } = useForm<CommentFormData>();
 
     const onSubmit = (data: CommentFormData) => {
-        data.text = sanitizeHtml(data.text, {
+        const textContent = data.text || '';
+
+        if (!isHtmlValid(textContent)) {
+            setError('text', { type: 'validate', message: 'Your text contains invalid or unclosed HTML tags.' });
+            return;
+        } else {
+            clearErrors('text');
+        }
+
+        data.text = sanitizeHtml(textContent, {
             allowedTags: ['a', 'code', 'i', 'strong'],
             allowedAttributes: { a: ['href', 'title'] },
         });
@@ -36,10 +49,12 @@ const CommentForm: React.FC<CommentFormProps> = ({ onSubmitComment }) => {
             <div>
                 <label className="block text-sm font-medium text-gray-700">Username</label>
                 <input
-                    {...register('username', {required: true, pattern: /^[a-zA-Z0-9]+$/})}
+                    {...register('username', { required: true, pattern: /^[a-zA-Z0-9]+$/ })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500"
                 />
-                {errors.username && <span className="text-red-500 text-xs">Only alphanumeric characters allowed</span>}
+                {errors.username && (
+                    <span className="text-red-500 text-xs">Only alphanumeric characters allowed</span>
+                )}
             </div>
 
             <div>
@@ -57,7 +72,7 @@ const CommentForm: React.FC<CommentFormProps> = ({ onSubmitComment }) => {
             <div>
                 <label className="block text-sm font-medium text-gray-700">Home Page</label>
                 <input
-                    {...register('homePage', {pattern: /^https?:\/\/[^\s$.?#].[^\s]*$/})}
+                    {...register('homePage', { pattern: /^https?:\/\/[^\s$.?#].[^\s]*$/ })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500"
                 />
             </div>
@@ -65,29 +80,26 @@ const CommentForm: React.FC<CommentFormProps> = ({ onSubmitComment }) => {
             <div>
                 <label className="block text-sm font-medium text-gray-700">CAPTCHA</label>
                 <input
-                    {...register('captcha', {required: true})}
+                    {...register('captcha', { required: true })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500"
                 />
                 {errors.captcha && <span className="text-red-500 text-xs">Captcha is required</span>}
             </div>
+
             <div className="flex space-x-2 mb-2">
                 <button type="button" onClick={() => appendTag('i')} className="px-2 py-1 border rounded">[i]</button>
-                <button type="button" onClick={() => appendTag('strong')}
-                        className="px-2 py-1 border rounded">[strong]
-                </button>
-                <button type="button" onClick={() => appendTag('code')} className="px-2 py-1 border rounded">[code]
-                </button>
-                <button type="button" onClick={() => appendTag('a href="#"')} className="px-2 py-1 border rounded">[a]
-                </button>
+                <button type="button" onClick={() => appendTag('strong')} className="px-2 py-1 border rounded">[strong]</button>
+                <button type="button" onClick={() => appendTag('code')} className="px-2 py-1 border rounded">[code]</button>
+                <button type="button" onClick={() => appendTag('a href="#"')} className="px-2 py-1 border rounded">[a]</button>
             </div>
 
             <div>
                 <label className="block text-sm font-medium text-gray-700">Text</label>
                 <textarea
-                    {...register('text', {required: true})}
+                    {...register('text', { required: true })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500"
-                />
-                {errors.text && <span className="text-red-500 text-xs">Text is required</span>}
+                ></textarea>
+                {errors.text && <span className="text-red-500 text-xs">{errors.text.message}</span>}
             </div>
 
             <div>
