@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Comment } from "../../types/comment";
-import { CommentFormData } from "../../types/commentFormData";
-import { createComment, fetchComments } from "../../api/commentApi";
+import { CommentFormData } from "../../config/types/commentFormData";
+import { createComment } from "../../api/commentApi";
 import { useSorting } from "../../hooks/useSorting";
 import {usePagination} from "../../hooks/usePagination";
 import CommentItem from './CommentItem';
 import CommentForm from './CommentForm';
 import SortPanel from "../SortPanel/SortPanel";
 import PaginationPanel from "../PaginationPanel/PaginationPanel";
+import {useComments} from "../../context/CommentsContext";
 
 const CommentsList: React.FC = () => {
-    const [comments, setComments] = useState<Comment[]>([]);
-    const [loading, setLoading] = useState(true);
+    const { comments, loading, loadComments } = useComments();
 
     const {
         currentPage,
@@ -33,26 +32,12 @@ const CommentsList: React.FC = () => {
         loadComments(currentPage, sortField, sortOrder);
     }, [currentPage, sortField, sortOrder]);
 
-    const loadComments = async (page: number, field: string | null, order: 'ASC' | 'DESC') => {
-        setLoading(true);
-        try {
-            const data = await fetchComments(page, commentsPerPage, field, order);
-            setComments(data);
-        } finally {
-            setLoading(false);
-        }
-    };
-
     const handleSubmitMainComment = async (data: CommentFormData, files?: File[]) => {
         const formData = new FormData();
 
         formData.append('username', data.username);
         formData.append('email', data.email);
         formData.append('text', data.text);
-
-        if (data.parentId) {
-            formData.append('parentId', String(data.parentId));
-        }
 
         if (files) {
             Array.from(files).forEach((file) => {
@@ -61,22 +46,10 @@ const CommentsList: React.FC = () => {
         }
 
         try {
-            const response = await createComment(formData);
-            const newComment = response.data;
-            setComments((prevComments) => [newComment, ...prevComments]);
+            await createComment(formData);
         } catch (error) {
             console.error('Failed to submit comment: ', error);
         }
-    };
-
-    const handleUpdateReplies = (parentId: number, newReply: Comment) => {
-        setComments((prevComments) =>
-            prevComments.map(comment =>
-                comment.id === parentId
-                    ? { ...comment, replies: [...(comment.replies || []), newReply] }
-                    : comment
-            )
-        );
     };
 
     return (
@@ -98,7 +71,6 @@ const CommentsList: React.FC = () => {
                             <CommentItem
                                 key={comment.id}
                                 comment={comment}
-                                onReplyAdded={(newReply) => handleUpdateReplies(comment.id, newReply)}
                             />
                         ))}
 

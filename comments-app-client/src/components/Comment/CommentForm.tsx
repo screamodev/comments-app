@@ -1,14 +1,13 @@
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import sanitizeHtml from 'sanitize-html';
-import { CommentFormData } from "../../types/commentFormData";
+import {CommentFormData} from "../../config/types/commentFormData";
 
 interface CommentFormProps {
-    parentId?: number;
     onSubmitComment: (data: CommentFormData, files?: File[]) => void;
 }
 
-const CommentForm: React.FC<CommentFormProps> = ({ parentId, onSubmitComment }) => {
+const CommentForm: React.FC<CommentFormProps> = ({ onSubmitComment }) => {
     const {
         register,
         handleSubmit,
@@ -23,7 +22,7 @@ const CommentForm: React.FC<CommentFormProps> = ({ parentId, onSubmitComment }) 
         });
         const files = getValues('files');
 
-        onSubmitComment({ ...data, parentId }, files);
+        onSubmitComment({ ...data }, files);
     };
 
     const appendTag = (tag: string) => {

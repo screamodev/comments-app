@@ -1,27 +1,43 @@
 import React, { useState } from 'react';
 import { FiChevronDown, FiChevronUp } from "react-icons/fi";
-import { Comment } from "../../types/comment";
+import { Comment } from "../../config/types/comment";
 import Modal from '../Modal/Modal';
 import CommentForm from './CommentForm';
 import { loadCommentReplies, createComment } from "../../api/commentApi";
-import { CommentFormData } from "../../types/commentFormData";
+import { CommentFormData } from "../../config/types/commentFormData";
+import { useComments } from "../../context/CommentsContext";
 
 interface CommentItemProps {
     comment: Comment;
-    onReplyAdded: (newReply: Comment) => void;
 }
 
-const CommentItem: React.FC<CommentItemProps> = ({ comment, onReplyAdded }) => {
+const CommentItem: React.FC<CommentItemProps> = ({ comment }) => {
     const [showReplies, setShowReplies] = useState(false);
-    const [replies, setReplies] = useState<Comment[]>(comment.replies || []);
     const [repliesLoaded, setRepliesLoaded] = useState(!!comment.replies);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const { updateReplies } = useComments(); // Функция из контекста для обновления replies
+
+    const loadRepliesRecursively = async (parentId: number) => {
+        const loadedReplies = await loadCommentReplies(parentId);
+
+        for (const reply of loadedReplies) {
+            if (!reply.replies || reply.replies.length === 0) {
+                const deeperReplies = await loadCommentReplies(reply.id);
+                reply.replies = deeperReplies;
+            }
+        }
+        return loadedReplies;
+    };
 
     const toggleReplies = async () => {
         if (!showReplies && !repliesLoaded) {
-            const loadedReplies = await loadCommentReplies(comment.id);
-            setReplies(loadedReplies);
-            setRepliesLoaded(true);
+            try {
+                const loadedReplies = await loadRepliesRecursively(comment.id);
+                updateReplies(comment.id, loadedReplies); // Обновляем replies через контекст
+                setRepliesLoaded(true);
+            } catch (error) {
+                console.error("Failed to load replies: ", error);
+            }
         }
         setShowReplies(!showReplies);
     };
@@ -32,7 +48,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, onReplyAdded }) => {
         formData.append('username', data.username);
         formData.append('email', data.email);
         formData.append('text', data.text);
-        formData.append('parentId', String(data.parentId));
+        formData.append('parentId', String(comment.id));
 
         if (files?.length) {
             files.forEach((file) => {
@@ -41,13 +57,11 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, onReplyAdded }) => {
         }
 
         try {
-            const response = await createComment(formData);
-            const newReply = response.data;
-            setReplies((prevReplies) => [...prevReplies, newReply]);
-            onReplyAdded(newReply);
+            await createComment(formData);
+
             setIsModalOpen(false);
         } catch (error) {
-            console.error('Failed to submit reply: ', error);
+            console.error("Failed to submit reply: ", error);
         }
     };
 
@@ -57,7 +71,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, onReplyAdded }) => {
             <div className="flex-1">
                 <div className="bg-gray-100 rounded-md p-3">
                     <div className="flex items-center justify-between">
-                        <p className="font-bold text-blue-600">{comment.username || "No name"}</p>
+                        <p className="font-bold text-indigo-600">{comment.username || "No name"}</p>
                         <p className="text-xs text-gray-400">{new Date(comment.createdAt).toLocaleDateString()}</p>
                     </div>
                     <p
@@ -73,9 +87,9 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment, onReplyAdded }) => {
                     </div>
                 </div>
 
-                {showReplies && replies.map(reply => (
+                {showReplies && comment.replies && comment.replies.map(reply => (
                     <div className="ml-6" key={reply.id}>
-                        <CommentItem comment={reply} onReplyAdded={onReplyAdded} />
+                        <CommentItem key={reply.id} comment={reply} />
                     </div>
                 ))}
             </div>
