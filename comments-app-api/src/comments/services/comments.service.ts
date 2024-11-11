@@ -1,5 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import {Inject, Injectable} from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { CACHE_MANAGER } from "@nestjs/cache-manager";
+import { Cache } from 'cache-manager';
 import * as sanitizeHtml from 'sanitize-html';
 import { Repository } from 'typeorm';
 import { Comment } from '../entities/comment.entity';
@@ -10,6 +12,7 @@ export class CommentsService {
   constructor(
       @InjectRepository(Comment)
       private commentRepository: Repository<Comment>,
+      @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
   async createComment(dto: CreateCommentDto): Promise<Comment> {
@@ -26,12 +29,21 @@ export class CommentsService {
       parent: dto.parentId ? await this.commentRepository.findOneBy({ id: dto.parentId }) : null,
     });
 
+    await this.cacheManager.reset();
+
     return await this.commentRepository.save(comment);
   }
 
 
   async getComments(page: number, limit: number, field: string, order: 'ASC' | 'DESC') {
-    return this.commentRepository
+    const cacheKey = `comments_${page}_${limit}_${field}_${order}`;
+    const cachedComments = await this.cacheManager.get<Comment[]>(cacheKey);
+
+    if (cachedComments) {
+      return cachedComments;
+    }
+
+    const comments = await this.commentRepository
         .createQueryBuilder('comment')
         .leftJoinAndSelect('comment.files', 'files')
         .leftJoinAndSelect('comment.parent', 'parent')
@@ -41,6 +53,10 @@ export class CommentsService {
         .skip((page - 1) * limit)
         .take(limit)
         .getMany();
+
+    await this.cacheManager.set(cacheKey, comments, 0);
+
+    return comments;
   }
 
   async getReplies(commentId: number) {
