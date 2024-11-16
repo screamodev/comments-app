@@ -52,4 +52,6 @@ export class CreateCommentDto {
     })
     @Type(() => Object)
     files: Express.Multer.File[];
+
+    jobIds: string
 }
