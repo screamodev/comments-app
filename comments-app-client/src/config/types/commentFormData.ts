@@ -6,4 +6,5 @@ export interface CommentFormData {
     parentId?: number;
     text: string;
     files?: File[];
+    jobIds?: string[];
 }
