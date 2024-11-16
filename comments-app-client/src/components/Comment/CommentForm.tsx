@@ -1,11 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useForm } from 'react-hook-form';
-import sanitizeHtml from 'sanitize-html';
-import { CommentFormData } from "../../config/types/commentFormData";
-import {isHtmlValid} from "../../utils/isHtmlValid";
+import { useFileUpload } from '../../hooks/useFileUpload';
+import { CommentFormData } from '../../config/types/commentFormData';
+import { sanitizeText } from "../../utils/sanitize";
+import { isHtmlValid } from "../../utils/isHtmlValid";
+import TextInput from "../Form/TextInput/TextInput";
+import FormatButtons from "../Form/FormatButtons/FormatButtons";
+import TextareaInput from "../Form/TextareaInput/TextareaInput";
+import FileUpload from "../Form/FileUpload/FileUpload";
 
 interface CommentFormProps {
-    onSubmitComment: (data: CommentFormData, files?: File[]) => void;
+    onSubmitComment: (data: CommentFormData) => void;
 }
 
 const CommentForm: React.FC<CommentFormProps> = ({ onSubmitComment }) => {
@@ -16,8 +21,13 @@ const CommentForm: React.FC<CommentFormProps> = ({ onSubmitComment }) => {
         setValue,
         getValues,
         setError,
-        clearErrors
+        clearErrors,
     } = useForm<CommentFormData>();
+
+    const { preUploadedFiles, jobIds, handleFileChange, removeFile, isUploading } = useFileUpload();
+
+    const [previewMode, setPreviewMode] = useState(false);
+    const [previewContent, setPreviewContent] = useState<string>("");
 
     const onSubmit = (data: CommentFormData) => {
         const textContent = data.text || '';
@@ -29,13 +39,8 @@ const CommentForm: React.FC<CommentFormProps> = ({ onSubmitComment }) => {
             clearErrors('text');
         }
 
-        data.text = sanitizeHtml(textContent, {
-            allowedTags: ['a', 'code', 'i', 'strong'],
-            allowedAttributes: { a: ['href', 'title'] },
-        });
-        const files = getValues('files');
-
-        onSubmitComment({ ...data }, files);
+        data.text = sanitizeText(textContent);
+        onSubmitComment({ ...data, jobIds });
     };
 
     const appendTag = (tag: string) => {
@@ -44,81 +49,134 @@ const CommentForm: React.FC<CommentFormProps> = ({ onSubmitComment }) => {
         setValue('text', newText);
     };
 
+    const togglePreview = () => {
+        if (!previewMode) {
+            const textContent = getValues('text') || '';
+            if (!isHtmlValid(textContent)) {
+                setError('text', { type: 'validate', message: 'Your text contains invalid or unclosed HTML tags.' });
+                return;
+            }
+            setPreviewContent(sanitizeText(textContent));
+        }
+        setPreviewMode(!previewMode);
+    };
+
     return (
-        <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Username</label>
-                <input
-                    {...register('username', { required: true, pattern: /^[a-zA-Z0-9]+$/ })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500"
-                />
-                {errors.username && (
-                    <span className="text-red-500 text-xs">Only alphanumeric characters allowed</span>
-                )}
-            </div>
+        <div>
+            {previewMode ? (
+                <div className="border rounded-md p-4 bg-gray-100">
+                    <h2 className="text-lg font-semibold text-gray-700 mb-2">Comment Preview</h2>
+                    <div
+                        className="text-gray-800 mb-4"
+                        dangerouslySetInnerHTML={{ __html: previewContent }}
+                    ></div>
+                    <div className="mt-4">
+                        <h3 className="font-medium text-gray-600">Attached Files:</h3>
+                        <div className="flex flex-wrap mt-2">
+                            {preUploadedFiles.map((fileItem, index) =>
+                                fileItem.file.type.startsWith('image/') ? (
+                                    <img
+                                        key={index}
+                                        src={URL.createObjectURL(fileItem.file)}
+                                        alt={fileItem.file.name}
+                                        className="w-20 h-20 object-cover rounded-md mr-2 mb-2"
+                                    />
+                                ) : (
+                                    <a
+                                        key={index}
+                                        href={URL.createObjectURL(fileItem.file)}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="block text-blue-500 underline mr-2 mb-2"
+                                    >
+                                        {fileItem.file.name} ({(fileItem.file.size / 1024).toFixed(2)} KB)
+                                    </a>
+                                )
+                            )}
+                        </div>
+                        <button
+                            onClick={togglePreview}
+                            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 mt-4"
+                        >
+                            Edit Comment
+                        </button>
+                    </div>
+                </div>
+            ) : (
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                    <TextInput
+                        label="Username"
+                        name="username"
+                        register={register}
+                        errors={errors.username}
+                        validation={{ required: true, pattern: /^[a-zA-Z0-9]+$/ }}
+                        errorMessage="Only alphanumeric characters allowed"
+                    />
 
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <input
-                    {...register('email', {
-                        required: true,
-                        pattern: /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/
-                    })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500"
-                />
-                {errors.email && <span className="text-red-500 text-xs">Enter a valid email</span>}
-            </div>
+                    <TextInput
+                        label="Email"
+                        name="email"
+                        register={register}
+                        errors={errors.email}
+                        validation={{
+                            required: true,
+                            pattern: /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/,
+                        }}
+                        errorMessage="Enter a valid email"
+                    />
 
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Home Page</label>
-                <input
-                    {...register('homePage', { pattern: /^https?:\/\/[^\s$.?#].[^\s]*$/ })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500"
-                />
-            </div>
+                    <TextInput
+                        label="Home Page"
+                        name="homePage"
+                        register={register}
+                        validation={{ pattern: /^https?:\/\/[^\s$.?#].[^\s]*$/ }}
+                    />
 
-            <div>
-                <label className="block text-sm font-medium text-gray-700">CAPTCHA</label>
-                <input
-                    {...register('captcha', { required: true })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500"
-                />
-                {errors.captcha && <span className="text-red-500 text-xs">Captcha is required</span>}
-            </div>
+                    <TextInput
+                        label="CAPTCHA"
+                        name="captcha"
+                        register={register}
+                        errors={errors.captcha}
+                        validation={{ required: true }}
+                        errorMessage="Captcha is required"
+                    />
 
-            <div className="flex space-x-2 mb-2">
-                <button type="button" onClick={() => appendTag('i')} className="px-2 py-1 border rounded">[i]</button>
-                <button type="button" onClick={() => appendTag('strong')} className="px-2 py-1 border rounded">[strong]</button>
-                <button type="button" onClick={() => appendTag('code')} className="px-2 py-1 border rounded">[code]</button>
-                <button type="button" onClick={() => appendTag('a href="#"')} className="px-2 py-1 border rounded">[a]</button>
-            </div>
+                    <FormatButtons appendTag={appendTag} />
 
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Text</label>
-                <textarea
-                    {...register('text', { required: true })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500"
-                ></textarea>
-                {errors.text && <span className="text-red-500 text-xs">{errors.text.message}</span>}
-            </div>
+                    <TextareaInput
+                        label="Text"
+                        name="text"
+                        register={register}
+                        errors={errors.text}
+                        validation={{ required: true }}
+                    />
 
-            <div>
-                <label className="block text-sm font-medium text-gray-700">Upload Files</label>
-                <input
-                    {...register('files')}
-                    type="file"
-                    multiple
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500"
-                />
-            </div>
+                    <FileUpload
+                        handleFileChange={handleFileChange}
+                        preUploadedFiles={preUploadedFiles}
+                        removeFile={removeFile}
+                        isUploading={isUploading}
+                    />
 
-            <button
-                type="submit"
-                className="w-full py-2 px-4 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700 focus:outline-none"
-            >
-                Add Comment
-            </button>
-        </form>
+                    <div className="flex space-x-4">
+                        <button
+                            type="button"
+                            onClick={togglePreview}
+                            className="w-full py-2 px-4 bg-gray-600 text-white font-medium rounded-md hover:bg-gray-700 focus:outline-none"
+                        >
+                            Preview
+                        </button>
+                        <button
+                            type="submit"
+                            className="w-full py-2 px-4 bg-indigo-600 text-white font-medium rounded-md hover:bg-indigo-700 focus:outline-none"
+                            disabled={isUploading}
+                        >
+                            Add Comment
+                        </button>
+                    </div>
+                </form>
+            )}
+        </div>
     );
 };
 

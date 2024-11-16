@@ -99,11 +99,6 @@ export const CommentsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setComments(prevComments => updateRepliesRecursively(prevComments));
     };
 
-    useEffect(() => {
-        console.log("Updated state ", comments);
-    },[comments])
-
-
     return (
         <CommentsContext.Provider value={{ comments, loading, loadComments, addComment, addReply, updateReplies }}>
             {children}
