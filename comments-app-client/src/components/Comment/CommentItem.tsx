@@ -3,9 +3,12 @@ import { FiChevronDown, FiChevronUp } from "react-icons/fi";
 import { Comment } from "../../config/types/comment";
 import Modal from '../Modal/Modal';
 import CommentForm from './CommentForm';
-import { loadCommentReplies, createComment } from "../../api/commentApi";
-import { CommentFormData } from "../../config/types/commentFormData";
+import CommentFiles from './CommentFiles';
 import { useComments } from "../../context/CommentsContext";
+import { useReplies } from "../../hooks/useReplies";
+import {createComment} from "../../api/commentApi";
+import {createCommentFormData} from "../../utils/formDataHelper";
+import CommentReplies from "./CommentReplies";
 
 interface CommentItemProps {
     comment: Comment;
@@ -13,29 +16,16 @@ interface CommentItemProps {
 
 const CommentItem: React.FC<CommentItemProps> = ({ comment }) => {
     const [showReplies, setShowReplies] = useState(false);
-    const [repliesLoaded, setRepliesLoaded] = useState(!!comment.replies);
     const [isModalOpen, setIsModalOpen] = useState(false);
+    const { handleRepliesLoading, repliesLoaded } = useReplies(comment.id);
+
     const { updateReplies } = useComments();
-
-    const baseUrl = process.env.REACT_APP_API_KEY;
-
-    const loadRepliesRecursively = async (parentId: number) => {
-        const loadedReplies = await loadCommentReplies(parentId);
-        for (const reply of loadedReplies) {
-            if (!reply.replies || reply.replies.length === 0) {
-                const deeperReplies = await loadCommentReplies(reply.id);
-                reply.replies = deeperReplies;
-            }
-        }
-        return loadedReplies;
-    };
 
     const toggleReplies = async () => {
         if (!showReplies && !repliesLoaded) {
             try {
-                const loadedReplies = await loadRepliesRecursively(comment.id);
-                updateReplies(comment.id, loadedReplies); // Update replies through context
-                setRepliesLoaded(true);
+                const loadedReplies = await handleRepliesLoading();
+                updateReplies(comment.id, loadedReplies);
             } catch (error) {
                 console.error("Failed to load replies: ", error);
             }
@@ -43,24 +33,15 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment }) => {
         setShowReplies(!showReplies);
     };
 
-    const handleReplySubmit = async (data: CommentFormData, files?: File[]) => {
-        const formData = new FormData();
-        formData.append('username', data.username);
-        formData.append('email', data.email);
-        formData.append('text', data.text);
-        formData.append('parentId', String(comment.id));
-
-        if (files) {
-            Array.from(files).forEach((file) => {
-                formData.append('files', file);
-            });
-        }
+    const handleReplySubmit = async (data: any) => {
+        const jwtToken = localStorage.getItem('token') || '';
+        const formData = createCommentFormData({...data, parentId: comment.id});
 
         try {
-            await createComment(formData);
+            await createComment(formData, jwtToken);
             setIsModalOpen(false);
         } catch (error) {
-            console.error("Failed to submit reply: ", error);
+            console.error("Failed to submit reply:", error);
         }
     };
 
@@ -77,38 +58,7 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment }) => {
                         className="mt-2 text-gray-700"
                         dangerouslySetInnerHTML={{ __html: comment.text }}
                     ></p>
-
-                    {comment.files && (
-                        <div className="mt-3">
-                            {comment.files.map(file => (
-                                file.fileType.startsWith('image/') ? (
-                                    <a
-                                        key={file.id}
-                                        href={baseUrl + file.url}
-                                        data-lightbox={`comment-${comment.id}`}
-                                        data-title={file.filename}
-                                    >
-                                        <img
-                                            src={baseUrl + file.url}
-                                            alt={file.filename}
-                                            className="w-20 h-20 object-cover rounded-md mr-2 mb-2 cursor-pointer"
-                                        />
-                                    </a>
-                                ) : (
-                                    <a
-                                        key={file.id}
-                                        href={baseUrl + file.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="block text-blue-500 underline mt-2"
-                                    >
-                                        {file.filename} ({(file.fileSize / 1024).toFixed(2)} KB)
-                                    </a>
-                                )
-                            ))}
-                        </div>
-                    )}
-
+                    <CommentFiles files={comment.files} />
                     <div className="flex items-center space-x-4 mt-2 text-sm text-blue-500">
                         <button onClick={toggleReplies} className="flex items-center space-x-1">
                             {showReplies ? <FiChevronUp /> : <FiChevronDown />}
@@ -117,14 +67,10 @@ const CommentItem: React.FC<CommentItemProps> = ({ comment }) => {
                         <button onClick={() => setIsModalOpen(true)} className="hover:underline">Reply</button>
                     </div>
                 </div>
-
-                {showReplies && comment.replies && comment.replies.map(reply => (
-                    <div className="ml-6" key={reply.id}>
-                        <CommentItem key={reply.id} comment={reply} />
-                    </div>
-                ))}
+                {showReplies && (
+                    <CommentReplies replies={comment.replies} />
+                )}
             </div>
-
             <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
                 <h2 className="text-lg font-medium mb-4">Reply to the comment</h2>
                 <CommentForm onSubmitComment={handleReplySubmit} />

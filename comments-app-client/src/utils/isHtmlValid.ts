@@ -7,7 +7,7 @@ export const isHtmlValid = (html: string): boolean => {
         const [fullTag, tagName] = match;
         if (fullTag.startsWith('</')) {
             if (stack.length === 0 || stack.pop() !== tagName) {
-                return false; // Unmatched closing tag
+                return false;
             }
         } else if (!fullTag.endsWith('/>')) {
             stack.push(tagName);
