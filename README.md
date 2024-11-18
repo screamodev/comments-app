@@ -47,13 +47,17 @@ cd comments-app
 ```
 
 ### Step 2: Set Up Environment Variables
-Create a `.env` file in the `comments-app-api` directory with the following content:
+Create a `.env` file in the `comments-app` directory with the following content:
 ```env
-POSTGRES_HOST=postgres
-POSTGRES_PORT=5432
-POSTGRES_USER=your_postgres_user
-POSTGRES_PASSWORD=your_postgres_password
-POSTGRES_DB=comments_db
+POSTGRES_HOST=192.168.0.4 (or your container ip with postgress)
+POSTGRES_PORT=5433
+POSTGRES_USER=postgres
+POSTGRES_PASSWORD=postgres
+POSTGRES_DB=postgres
+```
+Create a `.env` file in the `comments-app-client` directory with the following content:
+```env
+REACT_APP_API_KEY=http://localhost:5001
 ```
 
 ### Step 3: Build and Start the Project Using Docker
