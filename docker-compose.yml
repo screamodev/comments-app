@@ -17,6 +17,19 @@ services:
     depends_on:
       - postgres
       - redis
+  comments-app.client:
+    container_name: lde.comments-app.client
+    build:
+      context: ./comments-app-client
+      dockerfile: Dockerfile
+    ports:
+      - '3000:3000'
+    environment:
+      REACT_APP_API_URL: http://localhost:5001
+    stdin_open: true
+    tty: true
+    depends_on:
+      - comments-app.api
   pgadmin4:
     image: dpage/pgadmin4
     container_name: lde.pgadmin4
