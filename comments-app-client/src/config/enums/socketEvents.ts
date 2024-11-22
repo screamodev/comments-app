@@ -1,4 +1,4 @@
 export enum SocketEvents {
-    newComment = "newComment",
-    newReply = "newReply"
+    newComment = 'newComment',
+    newReply = 'newReply',
 }

@@ -1,18 +1,18 @@
 export const isHtmlValid = (html: string): boolean => {
-    const tagPattern = /<\/?([a-zA-Z]+)(?:\s[^>]*)?>/g;
-    const stack: string[] = [];
-    let match: RegExpExecArray | null;
+    const tagPattern = /<\/?([a-zA-Z]+)(?:\s[^>]*)?>/g
+    const stack: string[] = []
+    let match: RegExpExecArray | null
 
     while ((match = tagPattern.exec(html)) !== null) {
-        const [fullTag, tagName] = match;
+        const [fullTag, tagName] = match
         if (fullTag.startsWith('</')) {
             if (stack.length === 0 || stack.pop() !== tagName) {
-                return false;
+                return false
             }
         } else if (!fullTag.endsWith('/>')) {
-            stack.push(tagName);
+            stack.push(tagName)
         }
     }
 
-    return stack.length === 0;
-};
+    return stack.length === 0
+}
