@@ -1,27 +1,28 @@
-import React from 'react';
+import React from 'react'
 
 interface SortPanelProps {
-    sortField: string | null;
-    toggleSortOrder: () => void;
-    resetSort: () => void;
-    renderSortOrderIcon: () => '▲' | '▼';
-    handleSortFieldChange: (field: string | null) => void;
+    sortField: string | null
+    toggleSortOrder: () => void
+    resetSort: () => void
+    renderSortOrderIcon: () => '▲' | '▼'
+    handleSortFieldChange: (field: string | null) => void
 }
 
 const SortPanel = ({
-                       sortField,
-                       toggleSortOrder,
-                       resetSort,
-                       renderSortOrderIcon,
-                       handleSortFieldChange
-                   }: SortPanelProps) => {
-
+    sortField,
+    toggleSortOrder,
+    resetSort,
+    renderSortOrderIcon,
+    handleSortFieldChange,
+}: SortPanelProps) => {
     return (
         <div className="sort-options flex justify-between items-center mb-4">
             <div className="flex items-center space-x-2">
                 <select
                     value={sortField || ''}
-                    onChange={(e) => handleSortFieldChange(e.target.value || null)}
+                    onChange={(e) =>
+                        handleSortFieldChange(e.target.value || null)
+                    }
                     className="px-4 py-2 border rounded bg-white shadow"
                 >
                     <option value="">Sort by</option>
@@ -45,7 +46,7 @@ const SortPanel = ({
                 Reset
             </button>
         </div>
-    );
-};
+    )
+}
 
-export default SortPanel;
+export default SortPanel

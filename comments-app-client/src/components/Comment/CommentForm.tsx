@@ -1,16 +1,17 @@
-import React, { useState } from 'react';
-import { useForm } from 'react-hook-form';
-import { useFileUpload } from '../../hooks/useFileUpload';
-import { CommentFormData } from '../../config/types/commentFormData';
-import { sanitizeText } from "../../utils/sanitize";
-import { isHtmlValid } from "../../utils/isHtmlValid";
-import TextInput from "../Form/TextInput/TextInput";
-import FormatButtons from "../Form/FormatButtons/FormatButtons";
-import TextareaInput from "../Form/TextareaInput/TextareaInput";
-import FileUpload from "../Form/FileUpload/FileUpload";
+import React, { useState } from 'react'
+import { useForm } from 'react-hook-form'
+import { CommentFormData } from '../../config/types/comment'
+import { useAuth } from '../../context/AuthContext'
+import { useFileUpload } from '../../hooks/useFileUpload'
+import { isHtmlValid } from '../../utils/isHtmlValid'
+import { sanitizeText } from '../../utils/sanitize'
+import FileUpload from '../Form/FileUpload'
+import FormatButtons from '../Form/FormatButtons'
+import TextInput from '../Form/TextInput'
+import TextareaInput from '../Form/TextareaInput'
 
 interface CommentFormProps {
-    onSubmitComment: (data: CommentFormData) => void;
+    onSubmitComment: (data: CommentFormData) => void
 }
 
 const CommentForm: React.FC<CommentFormProps> = ({ onSubmitComment }) => {
@@ -22,56 +23,84 @@ const CommentForm: React.FC<CommentFormProps> = ({ onSubmitComment }) => {
         getValues,
         setError,
         clearErrors,
-    } = useForm<CommentFormData>();
+    } = useForm<CommentFormData>()
 
-    const { preUploadedFiles, jobIds, handleFileChange, removeFile, isUploading } = useFileUpload();
+    const {
+        preUploadedFiles,
+        jobIds,
+        handleFileChange,
+        removeFile,
+        isUploading,
+    } = useFileUpload()
 
-    const [previewMode, setPreviewMode] = useState(false);
-    const [previewContent, setPreviewContent] = useState<string>("");
+    const [previewMode, setPreviewMode] = useState(false)
+    const [previewContent, setPreviewContent] = useState<string>('')
+
+    const { logout } = useAuth()
 
     const onSubmit = (data: CommentFormData) => {
-        const textContent = data.text || '';
+        const textContent = data.text || ''
 
         if (!isHtmlValid(textContent)) {
-            setError('text', { type: 'validate', message: 'Your text contains invalid or unclosed HTML tags.' });
-            return;
+            setError('text', {
+                type: 'validate',
+                message: 'Your text contains invalid or unclosed HTML tags.',
+            })
+            return
         } else {
-            clearErrors('text');
+            clearErrors('text')
         }
 
-        data.text = sanitizeText(textContent);
-        onSubmitComment({ ...data, jobIds });
-    };
+        data.text = sanitizeText(textContent)
+        onSubmitComment({ ...data, jobIds })
+    }
 
     const appendTag = (tag: string) => {
-        const currentText = getValues('text') || '';
-        const newText = `${currentText}<${tag}></${tag}>`;
-        setValue('text', newText);
-    };
+        const currentText = getValues('text') || ''
+        const newText = `${currentText}<${tag}></${tag}>`
+        setValue('text', newText)
+    }
 
     const togglePreview = () => {
         if (!previewMode) {
-            const textContent = getValues('text') || '';
+            const textContent = getValues('text') || ''
             if (!isHtmlValid(textContent)) {
-                setError('text', { type: 'validate', message: 'Your text contains invalid or unclosed HTML tags.' });
-                return;
+                setError('text', {
+                    type: 'validate',
+                    message:
+                        'Your text contains invalid or unclosed HTML tags.',
+                })
+                return
             }
-            setPreviewContent(sanitizeText(textContent));
+            setPreviewContent(sanitizeText(textContent))
         }
-        setPreviewMode(!previewMode);
-    };
+        setPreviewMode(!previewMode)
+    }
 
     return (
-        <div>
+        <div className="border border-gray-300 rounded-md bg-white p-4 shadow-md">
+            <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-medium">Add a Comment</h2>
+                <button
+                    onClick={logout}
+                    className="text-red-600 hover:text-red-700 font-medium underline"
+                >
+                    Logout
+                </button>
+            </div>
             {previewMode ? (
                 <div className="border rounded-md p-4 bg-gray-100">
-                    <h2 className="text-lg font-semibold text-gray-700 mb-2">Comment Preview</h2>
+                    <h2 className="text-lg font-semibold text-gray-700 mb-2">
+                        Comment Preview
+                    </h2>
                     <div
                         className="text-gray-800 mb-4"
                         dangerouslySetInnerHTML={{ __html: previewContent }}
                     ></div>
                     <div className="mt-4">
-                        <h3 className="font-medium text-gray-600">Attached Files:</h3>
+                        <h3 className="font-medium text-gray-600">
+                            Attached Files:
+                        </h3>
                         <div className="flex flex-wrap mt-2">
                             {preUploadedFiles.map((fileItem, index) =>
                                 fileItem.file.type.startsWith('image/') ? (
@@ -84,12 +113,16 @@ const CommentForm: React.FC<CommentFormProps> = ({ onSubmitComment }) => {
                                 ) : (
                                     <a
                                         key={index}
-                                        href={URL.createObjectURL(fileItem.file)}
+                                        href={URL.createObjectURL(
+                                            fileItem.file
+                                        )}
                                         target="_blank"
                                         rel="noopener noreferrer"
                                         className="block text-blue-500 underline mr-2 mb-2"
                                     >
-                                        {fileItem.file.name} ({(fileItem.file.size / 1024).toFixed(2)} KB)
+                                        {fileItem.file.name} (
+                                        {(fileItem.file.size / 1024).toFixed(2)}{' '}
+                                        KB)
                                     </a>
                                 )
                             )}
@@ -104,34 +137,6 @@ const CommentForm: React.FC<CommentFormProps> = ({ onSubmitComment }) => {
                 </div>
             ) : (
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                    <TextInput
-                        label="Username"
-                        name="username"
-                        register={register}
-                        errors={errors.username}
-                        validation={{ required: true, pattern: /^[a-zA-Z0-9]+$/ }}
-                        errorMessage="Only alphanumeric characters allowed"
-                    />
-
-                    <TextInput
-                        label="Email"
-                        name="email"
-                        register={register}
-                        errors={errors.email}
-                        validation={{
-                            required: true,
-                            pattern: /^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$/,
-                        }}
-                        errorMessage="Enter a valid email"
-                    />
-
-                    <TextInput
-                        label="Home Page"
-                        name="homePage"
-                        register={register}
-                        validation={{ pattern: /^https?:\/\/[^\s$.?#].[^\s]*$/ }}
-                    />
-
                     <TextInput
                         label="CAPTCHA"
                         name="captcha"
@@ -177,7 +182,7 @@ const CommentForm: React.FC<CommentFormProps> = ({ onSubmitComment }) => {
                 </form>
             )}
         </div>
-    );
-};
+    )
+}
 
-export default CommentForm;
+export default CommentForm

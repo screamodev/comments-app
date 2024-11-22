@@ -1,21 +1,23 @@
-import React from 'react';
-import {truncateFilename} from '../../../utils/truncateFilename';
+import React from 'react'
+import { truncateFilename } from '../../utils/truncateFilename'
 
 interface FileUploadProps {
-    handleFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-    preUploadedFiles: { file: File}[];
-    removeFile: (index: number) => void;
-    isUploading: boolean;
+    handleFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void
+    preUploadedFiles: { file: File }[]
+    removeFile: (index: number) => void
+    isUploading: boolean
 }
 
 const FileUpload: React.FC<FileUploadProps> = ({
-                                                   handleFileChange,
-                                                   preUploadedFiles,
-                                                   removeFile,
-                                                   isUploading,
-                                               }) => (
+    handleFileChange,
+    preUploadedFiles,
+    removeFile,
+    isUploading,
+}) => (
     <div>
-        <label className="block text-sm font-medium text-gray-700">Upload Files</label>
+        <label className="block text-sm font-medium text-gray-700">
+            Upload Files
+        </label>
         <input
             type="file"
             onChange={handleFileChange}
@@ -36,9 +38,11 @@ const FileUpload: React.FC<FileUploadProps> = ({
             </div>
         ))}
         {preUploadedFiles.length >= 2 && (
-            <p className="text-xs text-gray-500">You can only upload up to 2 files.</p>
+            <p className="text-xs text-gray-500">
+                You can only upload up to 2 files.
+            </p>
         )}
     </div>
-);
+)
 
-export default FileUpload;
+export default FileUpload

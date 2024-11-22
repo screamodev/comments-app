@@ -1,13 +1,16 @@
-import React from 'react';
+import React from 'react'
 
 interface PaginationPanelProps {
-    currentPage: number;
-    handlePreviousPage: () => void;
-    handleNextPage: () => void;
+    currentPage: number
+    handlePreviousPage: () => void
+    handleNextPage: () => void
 }
 
-const PaginationPanel = ({currentPage, handlePreviousPage, handleNextPage}: PaginationPanelProps) => {
-
+const PaginationPanel = ({
+    currentPage,
+    handlePreviousPage,
+    handleNextPage,
+}: PaginationPanelProps) => {
     return (
         <div className="pagination flex justify-center space-x-2 mt-4">
             <button
@@ -24,7 +27,7 @@ const PaginationPanel = ({currentPage, handlePreviousPage, handleNextPage}: Pagi
                 Next
             </button>
         </div>
-    );
-};
+    )
+}
 
-export default PaginationPanel;
+export default PaginationPanel
