@@ -6,10 +6,11 @@ import { CommentsController } from "./controllers/comments.controller";
 import { Comment } from "./entities/comment.entity";
 import { FilesModule } from "../files/files.module";
 import { CommentsGateway } from "./gateways/comments.gateway";
+import { User } from "../users/entities/user.entity";
 
 @Module({
   imports: [
-    TypeOrmModule.forFeature([Comment]),
+    TypeOrmModule.forFeature([Comment, User]),
     CacheModule.register(),
     FilesModule,
   ],

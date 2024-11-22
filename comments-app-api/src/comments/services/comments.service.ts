@@ -5,27 +5,30 @@ import { Cache } from "cache-manager";
 import * as sanitizeHtml from "sanitize-html";
 import { Repository } from "typeorm";
 import { Comment } from "../entities/comment.entity";
-import { CreateCommentDto } from "../dtos/create-comment.dto";
+import { CommentDto } from "../dtos/comment.dto";
+import { User } from "../../users/entities/user.entity";
 
 @Injectable()
 export class CommentsService {
   constructor(
     @InjectRepository(Comment)
     private commentRepository: Repository<Comment>,
+    @InjectRepository(User)
+    private userRepository: Repository<User>,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
   ) {}
 
-  async createComment(dto: CreateCommentDto): Promise<Comment> {
+  async createComment(dto: CommentDto): Promise<Comment> {
     const sanitizedText = sanitizeHtml(dto.text, {
       allowedTags: ["a", "code", "i", "strong", "p"],
       allowedAttributes: { a: ["href", "title"] },
     });
 
+    const user = await this.userRepository.findOneBy({ id: dto.userId });
+
     const comment = this.commentRepository.create({
       text: sanitizedText,
-      username: dto.username,
-      email: dto.email,
-      homePage: dto.homePage,
+      user: user,
       parent: dto.parentId
         ? await this.commentRepository.findOneBy({ id: dto.parentId })
         : null,
@@ -51,8 +54,9 @@ export class CommentsService {
 
     const comments = await this.commentRepository
       .createQueryBuilder("comment")
-      .leftJoinAndSelect("comment.files", "files")
+      .leftJoinAndSelect("comment.user", "user")
       .leftJoinAndSelect("comment.parent", "parent")
+      .leftJoinAndSelect("comment.files", "files")
       .leftJoinAndSelect("comment.replies", "replies")
       .where("comment.parent IS NULL")
       .orderBy(`comment.${field}`, order)
@@ -68,7 +72,7 @@ export class CommentsService {
   async getReplies(commentId: number) {
     return this.commentRepository.find({
       where: { parent: { id: commentId } },
-      relations: ["files", "parent", "replies"],
+      relations: ["files", "user", "parent", "replies"],
       order: { createdAt: "ASC" },
     });
   }

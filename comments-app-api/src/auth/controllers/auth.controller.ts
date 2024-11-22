@@ -16,18 +16,13 @@ export class AuthController {
 
   @Post("register")
   async register(@Body() registerDto: RegisterDto): Promise<AuthResponse> {
-    const { username, password, fullname } = registerDto;
-
-    const user = await this.userService.registerUser(
-      username,
-      password,
-      fullname,
-    );
+    const user = await this.userService.registerUser(registerDto);
 
     const payload = {
       id: user.id,
       username: user.username,
-      fullname: user.fullname,
+      email: user.email,
+      homePage: user.homePage,
     };
     const token = this.authService.generateJwt(payload);
 
@@ -46,7 +41,8 @@ export class AuthController {
     const payload = {
       id: user.id,
       username: user.username,
-      fullname: user.fullname,
+      email: user.email,
+      homePage: user.homePage,
     };
     const token = this.authService.generateJwt(payload);
 

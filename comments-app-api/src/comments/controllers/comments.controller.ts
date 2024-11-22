@@ -5,9 +5,11 @@ import {
   Get,
   Query,
   Param,
+  Request,
   UploadedFiles,
   UseInterceptors,
   BadRequestException,
+  UseGuards,
 } from "@nestjs/common";
 import { CommentsService } from "../services/comments.service";
 import { CreateCommentDto } from "../dtos/create-comment.dto";
@@ -15,6 +17,8 @@ import { FilesInterceptor } from "@nestjs/platform-express";
 import { FileService } from "../../files/services/file.service";
 import { ApiBearerAuth, ApiConsumes } from "@nestjs/swagger";
 import { CommentsGateway } from "../gateways/comments.gateway";
+import { AuthGuard } from "@nestjs/passport";
+import { CommentDto } from "../dtos/comment.dto";
 
 @Controller("comments")
 export class CommentsController {
@@ -40,8 +44,10 @@ export class CommentsController {
   }
 
   @ApiBearerAuth()
+  @UseGuards(AuthGuard("jwt"))
   @Post("pre-upload")
   @UseInterceptors(FilesInterceptor("files"))
+  @ApiConsumes("multipart/form-data")
   async preUpload(@UploadedFiles() files: Express.Multer.File[]) {
     if (!files || files.length === 0) {
       throw new BadRequestException("No files uploaded");
@@ -52,16 +58,23 @@ export class CommentsController {
   }
 
   @ApiBearerAuth()
+  @UseGuards(AuthGuard("jwt"))
   @Post()
-  @ApiConsumes("multipart/form-data")
-  @UseInterceptors(FilesInterceptor("files")) // TODO: Delete file from here
-  async create(@Body() createCommentDto: CreateCommentDto) {
-    const comment = await this.commentsService.createComment(createCommentDto);
+  async create(
+    @Request() req: any,
+    @Body() createCommentDto: CreateCommentDto,
+  ) {
+    const userId = req.user.id;
+
+    const comment = await this.commentsService.createComment({
+      ...createCommentDto,
+      userId,
+    });
 
     if (createCommentDto.jobIds && createCommentDto.jobIds.length > 0) {
       comment.files = await this.fileService.attachFilesToComment(
         comment.id,
-        JSON.parse(createCommentDto.jobIds),
+        createCommentDto.jobIds,
       );
     }
 

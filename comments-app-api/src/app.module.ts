@@ -13,6 +13,9 @@ import { UserModule } from "./users/user.module";
 
 @Module({
   imports: [
+    ConfigModule.forRoot({
+      isGlobal: true,
+    }),
     ServeStaticModule.forRoot({
       rootPath: join(__dirname, "..", "db/uploads"),
       serveRoot: "/app/dist/db/uploads",
@@ -24,9 +27,6 @@ import { UserModule } from "./users/user.module";
       },
     }),
     EventEmitterModule.forRoot(),
-    ConfigModule.forRoot({
-      isGlobal: true,
-    }),
     TypeOrmModule.forRoot(dataSourceOptions),
     UserModule,
     AuthModule,

@@ -14,22 +14,13 @@ export class Comment {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: "varchar", length: 50 })
-  username: string;
-
-  @Column({ type: "varchar", length: 100 })
-  email: string;
-
-  @Column({ type: "varchar", nullable: true })
-  homePage: string;
-
   @Column({ type: "text" })
   text: string;
 
   @ManyToOne(() => Comment, (comment) => comment.replies, { nullable: true })
   parent: Comment;
 
-  @ManyToOne(() => Comment, (comment) => comment.replies, { nullable: true })
+  @ManyToOne(() => User, (user) => user.id)
   user: User;
 
   @OneToMany(() => Comment, (comment) => comment.parent)

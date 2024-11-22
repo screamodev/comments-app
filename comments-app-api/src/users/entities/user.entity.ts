@@ -19,8 +19,11 @@ export class User {
   @Column({ select: false })
   password?: string;
 
-  @Column({ length: 150 })
-  fullname: string;
+  @Column({ type: "varchar", length: 100 })
+  email: string;
+
+  @Column({ type: "varchar", nullable: true })
+  homePage: string;
 
   @OneToMany(() => Comment, (comment) => comment.user)
   comments?: Comment[];
