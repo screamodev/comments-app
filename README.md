@@ -54,6 +54,8 @@ POSTGRES_PORT=5433
 POSTGRES_USER=postgres
 POSTGRES_PASSWORD=postgres
 POSTGRES_DB=postgres
+
+JWT_SECRET=secret123
 ```
 Create a `.env` file in the `comments-app-client` directory with the following content:
 ```env

@@ -1,7 +1,7 @@
-import React from 'react';
+import React from 'react'
 
 interface FormatButtonsProps {
-    appendTag: (tag: string) => void;
+    appendTag: (tag: string) => void
 }
 
 const FormatButtons: React.FC<FormatButtonsProps> = ({ appendTag }) => {
@@ -10,7 +10,7 @@ const FormatButtons: React.FC<FormatButtonsProps> = ({ appendTag }) => {
         { label: '[strong]', tag: 'strong' },
         { label: '[code]', tag: 'code' },
         { label: '[a]', tag: 'a href="#"' },
-    ];
+    ]
 
     return (
         <div className="flex space-x-2 mb-2">
@@ -25,7 +25,7 @@ const FormatButtons: React.FC<FormatButtonsProps> = ({ appendTag }) => {
                 </button>
             ))}
         </div>
-    );
-};
+    )
+}
 
-export default FormatButtons;
+export default FormatButtons

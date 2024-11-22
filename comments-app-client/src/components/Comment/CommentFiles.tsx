@@ -1,18 +1,18 @@
-import React from 'react';
-import { CommentFile } from "../../config/types/commentFile";
+import React from 'react'
+import { CommentFile } from '../../config/types/comment'
 
 interface CommentFilesProps {
-    files?: CommentFile[];
+    files?: CommentFile[]
 }
 
 const CommentFiles: React.FC<CommentFilesProps> = ({ files }) => {
-    if (!files || files.length === 0) return null;
+    if (!files || files.length === 0) return null
 
-    const baseUrl = process.env.REACT_APP_API_KEY;
+    const baseUrl = process.env.REACT_APP_API_KEY
 
     return (
         <div className="mt-3">
-            {files.map((file) => (
+            {files.map((file) =>
                 file.fileType.startsWith('image/') ? (
                     <a
                         key={file.id}
@@ -37,9 +37,9 @@ const CommentFiles: React.FC<CommentFilesProps> = ({ files }) => {
                         {file.filename} ({(file.fileSize / 1024).toFixed(2)} KB)
                     </a>
                 )
-            ))}
+            )}
         </div>
-    );
-};
+    )
+}
 
-export default CommentFiles;
+export default CommentFiles
